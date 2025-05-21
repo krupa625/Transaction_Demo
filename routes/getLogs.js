@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { logsEntry } = require("../controller/logs");
+const { getPassbook } = require("../controller/logs");
 
-router.get("/user/:userId/logs", logsEntry);
+router.get("/user/:userId/logs", getPassbook);
 
 module.exports = router;

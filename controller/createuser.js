@@ -2,7 +2,7 @@ const User = require("../models/user");
 const { STATUS_CODES } = require("../utils/statuscode");
 
 const userCreate = async (req, res) => {
-  const { name, email } = req.body;
+  const { name, email, balance } = req.body;
 
   try {
     const existing = await User.findOne({ email });
@@ -11,7 +11,7 @@ const userCreate = async (req, res) => {
         .status(STATUS_CODES.BadRequest)
         .send("User with this email already exists");
 
-    const newUser = new User({ name, email });
+    const newUser = new User({ name, email, balance });
     await newUser.save();
 
     res
