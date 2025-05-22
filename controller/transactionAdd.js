@@ -20,6 +20,7 @@ const transferFunds = async (req, res) => {
     //   { name: "krups" },
     //   { name: "Riddhi" }
     // ).session(session);
+
     // console.log(updateUser);
     const toUser = await User.findById(toUserId).session(session);
 
@@ -66,6 +67,7 @@ const transferFunds = async (req, res) => {
     //  Scenario 3: with session read before commit(updated)
     // const fromUserInside = await User.findById(fromUserId).session(session);
     // console.log("From User (inside session before commit):", fromUserInside.balance);
+    console.log("jshggh");
 
     //  Scenario 4: Create 2nd session and read (old)
     // const session2 = await mongoose.startSession();
