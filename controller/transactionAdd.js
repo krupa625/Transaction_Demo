@@ -56,7 +56,7 @@ const transferFunds = async (req, res) => {
           description: `Transaction to ${fromUser.name}`,
         },
       ],
-      { session_1, ordered: true }
+      { session: session_1, ordered: true }
     );
 
     //  Scenario 2: read before commit without session (old balance)
