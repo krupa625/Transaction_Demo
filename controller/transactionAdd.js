@@ -8,12 +8,19 @@ const mongoose = require("mongoose");
 const transferFunds = async (req, res) => {
   const { fromUserId, toUserId, amount } = req.body;
 
-  // 📌 Scenario 1: Single session transaction (standard flow)
+  //  Scenario 1: Single session
   const session = await mongoose.startSession();
   session.startTransaction();
+  const session_1 = await mongoose.startSession();
+  session_1.startTransaction();
 
   try {
     const fromUser = await User.findById(fromUserId).session(session);
+    // const updateUser = await User.updateOne(
+    //   { name: "krups" },
+    //   { name: "Riddhi" }
+    // ).session(session);
+    // console.log(updateUser);
     const toUser = await User.findById(toUserId).session(session);
 
     if (!fromUser || !toUser) {
@@ -31,32 +38,49 @@ const transferFunds = async (req, res) => {
     fromUser.balance -= amount;
     toUser.balance += amount;
 
-    await fromUser.save({ session });
-    await toUser.save({ session });
+    await fromUser.save({ session_1 });
+    await toUser.save({ session_1 });
 
-    // 📌 Scenario 2: Before commit — Read user outside session (should show old balance)
+    await Transaction.create(
+      [
+        {
+          userId: fromUser._id,
+          type: "debit",
+          amount,
+          description: `Transaction to ${toUser.name}`,
+        },
+        {
+          userId: toUser._id,
+          type: "credit",
+          amount,
+          description: `Transaction to ${fromUser.name}`,
+        },
+      ],
+      { session_1, ordered: true }
+    );
+
+    //  Scenario 2: read before commit without session (old balance)
     // const fromUserOutside = await User.findById(fromUserId);
     // console.log("From User (outside session before commit):", fromUserOutside.balance);
 
-    // 📌 Scenario 3: Before commit — Read user inside session (should show updated balance)
+    //  Scenario 3: with session read before commit(updated)
     // const fromUserInside = await User.findById(fromUserId).session(session);
     // console.log("From User (inside session before commit):", fromUserInside.balance);
 
-    // 📌 Scenario 4: Create another session in parallel and try reading same user (should show old balance)
+    //  Scenario 4: Create 2nd session and read (old)
     // const session2 = await mongoose.startSession();
     // const fromUserInSession2 = await User.findById(fromUserId).session(session2);
     // console.log("From User (inside session2 before commit):", fromUserInSession2.balance);
     // await session2.endSession();
-
+    await session_1.abortTransaction();
     await session.commitTransaction();
     session.endSession();
 
-    // 📌 Scenario 5: After commit — Read user outside (should show updated balance)
+    // Scenario 5: without session read after commit(updated)
     // const fromUserAfterCommit = await User.findById(fromUserId);
     // console.log("From User (outside after commit):", fromUserAfterCommit.balance);
 
     res.send("Transaction done");
-
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
@@ -64,7 +88,7 @@ const transferFunds = async (req, res) => {
     res.status(STATUS_CODES.InternalServerError).send("Transaction failed");
   }
 
-  // 📌 Scenario 6: Transaction abort test
+  //  Scenario 6: Transaction abort
   // const sessionAbort = await mongoose.startSession();
   // sessionAbort.startTransaction();
   // const userAbort = await User.findById(fromUserId).session(sessionAbort);
@@ -75,7 +99,7 @@ const transferFunds = async (req, res) => {
   // const afterAbortCheck = await User.findById(fromUserId);
   // console.log("After Abort Transaction, From User balance:", afterAbortCheck.balance);
 
-  // 📌 Scenario 7: Two sessions, one commit one abort
+  //  Scenario 7: Two sessions
   // const sessionA = await mongoose.startSession();
   // const sessionB = await mongoose.startSession();
   // sessionA.startTransaction();
@@ -92,7 +116,6 @@ const transferFunds = async (req, res) => {
   // sessionB.endSession();
   // const finalUserCheck = await User.findById(fromUserId);
   // console.log("After Two sessions (one commit, one abort):", finalUserCheck.balance);
-
 };
 
 module.exports = { transferFunds };
