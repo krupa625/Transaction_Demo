@@ -17,6 +17,9 @@ app.use("/api", route);
 app.get("/", (req, res) => {
   res.send("Passbook API Running");
 });
+app.all("*all", (req, res) => {
+  res.status(404).send("Route not found");
+});
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
